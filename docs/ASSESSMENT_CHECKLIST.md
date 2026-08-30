@@ -62,9 +62,10 @@ contradictory claim.
 - [x] API reference and generated FastAPI OpenAPI documentation.
 - [x] Automated backend, frontend-helper and live smoke tests.
 - [x] Four-slide presentation outline and 30-minute demo sequence.
-- [ ] Final Git commit and GitHub repository link.
+- [x] Final Git commit and private GitHub repository:
+      `https://github.com/beura-chirantan/kpi-travels`.
 - [ ] Actual presentation deck created from the outline.
 - [ ] Live Groq request rehearsed with the final local environment.
 
-The last three items require the candidate's repository, presentation tool and
-private environment; they should be completed before the Microsoft Teams call.
+The remaining two items require the candidate's presentation tool and private
+environment; they should be completed before the Microsoft Teams call.
