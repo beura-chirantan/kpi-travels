@@ -59,7 +59,7 @@ export default function DashboardPage({
       <PageHeading
         eyebrow="Bus staff"
         title="Daily report"
-        description="Revenue, customer ratings and seats — all in one place."
+        description="Revenue, customer ratings and seats for buses travelling on the selected date."
       >
         <button className="button" onClick={() => onTrips(selectedDate)}>
           See trips for this date →
@@ -119,7 +119,9 @@ export default function DashboardPage({
                   aria-haspopup="dialog"
                 >
                   <span>
-                    {selectedDate === travelDate() ? "Today's revenue" : `Revenue for ${label}`}
+                    {selectedDate === travelDate()
+                      ? "Today's trip revenue"
+                      : `Trip revenue for ${label}`}
                   </span>
                   <strong>{money(report.revenue.revenue_paise)}</strong>
                   <span>
@@ -129,8 +131,9 @@ export default function DashboardPage({
                   </span>
                 </button>
                 <p className="small-note">
-                  Value of confirmed tickets booked on {label}. Cancelled tickets are not counted.
-                  This demo does not collect payments.
+                  Value of confirmed tickets for buses leaving on {label}, even if customers bought
+                  them earlier. Cancelled tickets are not counted. This demo does not collect
+                  payments.
                 </p>
                 {report.revenue.demo_bookings > 0 && (
                   <p className="small-note">
@@ -189,8 +192,11 @@ export default function DashboardPage({
                   </p>
                 )}
                 <section className="bus-revenue-section" aria-labelledby="bus-revenue-heading">
-                  <h2 id="bus-revenue-heading">Each bus: revenue & rating</h2>
-                  <p>Revenue for {label}. Customer ratings are from all dates.</p>
+                  <h2 id="bus-revenue-heading">Each bus: trip revenue & rating</h2>
+                  <p>
+                    Confirmed ticket value for buses leaving on {label}. Customer ratings are from
+                    all dates.
+                  </p>
                   <BusRevenueList buses={report.revenue.buses} />
                 </section>
                 <div className="dashboard-grid">
@@ -261,8 +267,9 @@ export default function DashboardPage({
                 </div>
               </section>
               <p className="small-note">
-                Totals use each ticket’s current price, bus and status. A cancellation or
-                rescheduling can change an earlier day’s revenue.
+                Revenue follows the bus departure date, not the ticket purchase date. Totals use
+                each ticket’s current price, bus and status, so cancellation or rescheduling can
+                change a departure period.
               </p>
             </>
           )

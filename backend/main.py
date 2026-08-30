@@ -61,7 +61,7 @@ def rating_summary():
 
 
 def revenue_summary(conn, start_timestamp, end_timestamp, monthly=False):
-    """Confirmed ticket value by booking date (IST), using stored ticket prices.
+    """Confirmed ticket value by trip departure date (IST), using stored prices.
 
     Aggregate ratings separately so multiple reviews never multiply ticket revenue.
     Include every bus, even those with no sales or no reviews.
@@ -75,12 +75,12 @@ def revenue_summary(conn, start_timestamp, end_timestamp, monthly=False):
         groups.append({'revenue_paise': 0, 'ticket_count': 0, 'demo_bookings': 0,
             'buses': {bus['id']: dict(bus) | {'revenue_paise': 0, 'ticket_count': 0}
                       for bus in fleet}})
-    rows = conn.execute(select(bookings.c.total_paise, bookings.c.created_at,
+    rows = conn.execute(select(bookings.c.total_paise, trips.c.departure_at,
         bookings.c.idempotency_key, trips.c.bus_id).select_from(bookings.join(trips))
-        .where(bookings.c.status == 'Confirmed', bookings.c.created_at >= start_timestamp,
-               bookings.c.created_at < end_timestamp)).mappings()
+        .where(bookings.c.status == 'Confirmed', trips.c.departure_at >= start_timestamp,
+               trips.c.departure_at < end_timestamp)).mappings()
     for row in rows:
-        index = datetime.fromtimestamp(row['created_at'], IST).month-1 if monthly else 0
+        index = datetime.fromtimestamp(row['departure_at'], IST).month-1 if monthly else 0
         group = groups[index]
         group['revenue_paise'] += row['total_paise']
         group['ticket_count'] += 1
@@ -118,10 +118,10 @@ def revenue_timeline(conn, selected_year, selected_month):
             key=lambda bus: (-bus['revenue_paise'], bus['name'], bus['id']))
         return group
 
-    rows = list(conn.execute(select(bookings.c.total_paise, bookings.c.created_at,
+    rows = list(conn.execute(select(bookings.c.total_paise, trips.c.departure_at,
         bookings.c.idempotency_key, trips.c.bus_id).select_from(bookings.join(trips))
         .where(bookings.c.status == 'Confirmed')).mappings())
-    year_values = {datetime.fromtimestamp(row['created_at'], IST).year for row in rows}
+    year_values = {datetime.fromtimestamp(row['departure_at'], IST).year for row in rows}
     year_values.update((selected_year, datetime.now(IST).year))
     years = {value: blank_group() for value in sorted(year_values)}
     months = [blank_group() for _ in range(12)]
@@ -138,17 +138,17 @@ def revenue_timeline(conn, selected_year, selected_month):
         cursor = week_end + timedelta(days=1)
 
     for row in rows:
-        booked = datetime.fromtimestamp(row['created_at'], IST)
-        add_booking(years[booked.year], row)
-        if booked.year != selected_year:
+        departure = datetime.fromtimestamp(row['departure_at'], IST)
+        add_booking(years[departure.year], row)
+        if departure.year != selected_year:
             continue
-        add_booking(months[booked.month-1], row)
-        if booked.month != selected_month:
+        add_booking(months[departure.month-1], row)
+        if departure.month != selected_month:
             continue
-        add_booking(days[booked.day-1], row)
-        booked_day = booked.date()
+        add_booking(days[departure.day-1], row)
+        departure_day = departure.date()
         for week_start, week_end, group in week_ranges:
-            if week_start <= booked_day <= week_end:
+            if week_start <= departure_day <= week_end:
                 add_booking(group, row)
                 break
 
@@ -347,8 +347,8 @@ def create_app(database_url=None, seed=None):
         with engine.begin() as conn:
             if 'phone' not in {column['name'] for column in inspect(conn).get_columns('users')}:
                 conn.exec_driver_sql('ALTER TABLE users ADD COLUMN phone VARCHAR(20)')
-        # Also installs history indexes when these additive tables already exist.
-        for table in (booking_changes, bookings):
+        # Also installs reporting/history indexes when these tables already exist.
+        for table in (trips, booking_changes, bookings):
             for index in table.indexes:
                 index.create(engine, checkfirst=True)
         if engine.dialect.name == 'sqlite':

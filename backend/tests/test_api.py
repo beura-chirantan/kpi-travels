@@ -495,6 +495,8 @@ def test_dashboard_changes_and_fare_snapshot(app):
     departure_after = client.get('/api/admin/dashboard', params={'date': tomorrow}).json()
     assert departure_after['inventory']['booked_seats'] == departure_before['inventory']['booked_seats']+1
     assert departure_after['inventory']['unbooked_seats'] == departure_before['inventory']['unbooked_seats']-1
+    assert departure_after['revenue']['revenue_paise'] == departure_before['revenue']['revenue_paise']+trip['price_paise']
+    assert departure_after['revenue']['ticket_count'] == departure_before['revenue']['ticket_count']+1
     with application.state.engine.begin() as conn:
         conn.execute(trips.update().where(trips.c.id == trip['id']).values(price_paise=150000))
     login(client)
@@ -507,6 +509,7 @@ def test_dashboard_changes_and_fare_snapshot(app):
     departure_cancelled = client.get('/api/admin/dashboard', params={'date': tomorrow}).json()
     assert departure_cancelled['inventory']['unbooked_seats'] == departure_before['inventory']['unbooked_seats']
     assert departure_cancelled['inventory']['net_value_paise'] == departure_before['inventory']['net_value_paise']
+    assert departure_cancelled['revenue'] == departure_before['revenue']
 
 
 def test_dashboard_date_boundaries_and_independent_scopes(app):
@@ -552,6 +555,8 @@ def test_dashboard_date_boundaries_and_independent_scopes(app):
         'cancelled_bookings': 1, 'net_value_paise': 85000, 'demo_bookings': 0}
     assert report['inventory'] == {'trip_count': 2, 'total_seats': 30, 'booked_seats': 3,
         'unbooked_seats': 27, 'bookable_seats': 8, 'net_value_paise': 55000, 'demo_bookings': 0}
+    assert report['revenue']['revenue_paise'] == 55000
+    assert report['revenue']['ticket_count'] == 3
     assert sum(row['total_seats'] for row in report['occupancy']) == 30
     assert sum(row['booked_seats'] for row in report['occupancy']) == 3
     assert sum(row['bookings'] for row in report['route_demand']) == 3
@@ -560,6 +565,8 @@ def test_dashboard_date_boundaries_and_independent_scopes(app):
     assert next_day['inventory']['trip_count'] == 1
     assert next_day['inventory']['bookable_seats'] == 9
     assert next_day['inventory']['net_value_paise'] == 70000
+    assert next_day['revenue']['revenue_paise'] == 70000
+    assert next_day['revenue']['ticket_count'] == 1
     assert next_day['activity']['net_value_paise'] == 30000
 
 

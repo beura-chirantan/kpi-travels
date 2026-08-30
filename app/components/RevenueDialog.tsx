@@ -141,7 +141,8 @@ export default function RevenueDialog({ date, onClose }: { date: string; onClose
   return (
     <Modal title="Revenue reports" onClose={onClose} wide>
       <p>
-        Choose a view, then select a day, week, month or year. Cancelled tickets are not counted.
+        Revenue follows each bus’s departure date, even when the ticket was purchased earlier.
+        Choose a day, week, month or year. Cancelled tickets are not counted.
       </p>
       <div className="segmented revenue-view-tabs" aria-label="Choose revenue report">
         {(
@@ -399,8 +400,8 @@ export default function RevenueDialog({ date, onClose }: { date: string; onClose
       )}
 
       <p className="small-note">
-        This demo does not collect payments. Totals use each ticket’s current price, bus and status,
-        so cancellations or rescheduling can change an earlier period.
+        This demo does not collect payments. Totals use each ticket’s current price, departure, bus
+        and status, so cancellations or rescheduling can change a departure period.
       </p>
       <div className="modal-actions">
         <button className="button" onClick={onClose}>

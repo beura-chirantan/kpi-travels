@@ -309,8 +309,9 @@ Cancelled and customers see the Admin reason.
 The Daily report starts at today in IST and supports Yesterday, Today, Tomorrow,
 or any selected date.
 
-- **Revenue:** stored value of Confirmed tickets booked on the selected date.
-  Cancelled tickets are excluded. It is booked ticket value, not collected money.
+- **Revenue:** stored value of Confirmed tickets for trips departing on the
+  selected date, regardless of when the customer bought them. Cancelled tickets
+  are excluded. It is booked ticket value, not collected money.
 - **Revenue reports:** four clear views. Daily and Weekly use month arrows,
   Monthly uses year arrows, and Yearly shows every recorded year. A selected-period
   summary displays revenue and ticket count before the calendar/cards; selecting
@@ -323,8 +324,8 @@ or any selected date.
   date, regardless of when their tickets were booked.
 
 Selecting a report date does not change data. Cancellation or rescheduling can
-change an earlier day's booked-ticket value because the report is a current view,
-not an immutable accounting ledger.
+move or remove value from a departure period because the report is a current
+view, not an immutable accounting ledger.
 
 ## REST API behavior
 

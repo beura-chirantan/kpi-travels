@@ -70,8 +70,8 @@ bookings = Table('bookings', metadata,
     CheckConstraint('seat_count = 1'))
 Index('ix_trips_route_departure', trips.c.route_id, trips.c.departure_at)
 Index('ix_trips_bus_departure', trips.c.bus_id, trips.c.departure_at)
+Index('ix_trips_departure', trips.c.departure_at)
 Index('ix_bookings_user_created', bookings.c.user_id, bookings.c.created_at)
-Index('ix_bookings_created', bookings.c.created_at)
 Index('ix_bookings_trip_status', bookings.c.trip_id, bookings.c.status)
 
 # One customer can keep one checkout seat on hold at a time. Holds are deleted

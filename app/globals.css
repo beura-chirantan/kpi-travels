@@ -3,6 +3,7 @@
   --ink: #20352e;
   --muted: #6c7973;
   --green: #23644c;
+  --green-pale: #edf6f0;
   --line: #dfe6e0;
   --paper: #f6f8f5;
   --soft: #eaf1e9;
@@ -2175,8 +2176,9 @@ td small {
   background: var(--green-pale);
 }
 .revenue-focus span {
-  color: var(--muted);
+  color: #3e5d51;
   font-size: 14px;
+  font-weight: 600;
 }
 .revenue-focus strong {
   color: var(--ink);
@@ -2269,6 +2271,9 @@ td small {
 .revenue-period-card small {
   color: var(--muted);
   white-space: normal;
+}
+.staff-area .revenue-period-card[aria-pressed='true'] small {
+  color: #e9f5ef;
 }
 .revenue-year-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));

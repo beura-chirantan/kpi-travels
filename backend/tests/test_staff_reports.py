@@ -1,4 +1,4 @@
-"""Selected weekdays/prices and a single booking-date revenue definition."""
+"""Selected weekdays/prices and a single departure-date revenue definition."""
 from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
@@ -127,23 +127,31 @@ def test_overlapping_selected_weekdays_roll_back_the_whole_plan(app):
         assert conn.execute(select(func.count()).select_from(weekly_schedules)).scalar_one() == 0
 
 
-def test_revenue_uses_ist_booking_dates_ticket_fares_and_separate_ratings(app):
+def test_revenue_uses_ist_departure_dates_ticket_fares_and_separate_ratings(app):
     application, client = app
     login(client)
     trip = future_trip(client)
     tickets = [book(client, trip).json() for _ in range(5)]
     # Include both sides of IST midnight, leap day, and the next year boundary.
-    dates = ['2024-01-31T23:59:59+05:30', '2024-02-01T00:00:00+05:30',
-             '2024-02-29T23:59:59+05:30', '2024-02-15T12:00:00+05:30', '2025-01-01T00:00:00+05:30']
+    departures = ['2024-01-31T23:59:59+05:30', '2024-02-01T00:00:00+05:30',
+                  '2024-02-29T23:59:59+05:30', '2024-02-15T12:00:00+05:30',
+                  '2025-01-01T00:00:00+05:30']
     prices = [10025, 20050, 30075, 99900, 40000]
     with application.state.engine.begin() as conn:
-        for ticket, value, created in zip(tickets, prices, dates):
+        template = dict(conn.execute(select(trips).where(
+            trips.c.id == trip['id'])).mappings().one())
+        template.pop('id')
+        purchased = int(datetime.fromisoformat('2026-08-30T12:00:00+05:30').timestamp())
+        for ticket, value, leaving in zip(tickets, prices, departures):
+            departure = int(datetime.fromisoformat(leaving).timestamp())
+            trip_id = conn.execute(trips.insert().values(**(template | {
+                'departure_at': departure, 'arrival_at': departure+3600,
+                'available_seats': template['total_seats']-1,
+            }))).inserted_primary_key[0]
             conn.execute(bookings.update().where(bookings.c.id == ticket['id']).values(
-                total_paise=value, created_at=int(datetime.fromisoformat(created).timestamp())))
+                trip_id=trip_id, total_paise=value, created_at=purchased))
         conn.execute(bookings.update().where(bookings.c.id == tickets[3]['id']).values(status='Cancelled'))
-        # These passengers have travelled; two reviews must not duplicate revenue rows.
-        conn.execute(trips.update().where(trips.c.id == trip['id']).values(
-            departure_at=1, arrival_at=2, price_paise=999999))
+        # Multiple reviews for the same bus must not duplicate its ticket revenue rows.
         for ticket, stars in zip(tickets[:2], [4, 5]):
             conn.execute(ratings.insert().values(booking_id=ticket['id'], bus_id=trip['bus_id'],
                 user_id=ticket['user_id'], stars=stars, comment='', updated_at=3))
@@ -169,10 +177,11 @@ def test_revenue_uses_ist_booking_dates_ticket_fares_and_separate_ratings(app):
     assert bus['average_rating'] == 4.5 and bus['rating_count'] == 2
     assert any(bus['revenue_paise'] == 0 and bus['average_rating'] is None for bus in feb['buses'])
     assert client.get('/api/admin/revenue?year=2025').json()['months'][0]['revenue_paise'] == 40000
-    for created, value in zip(dates[:3], prices[:3]):
-        daily = client.get('/api/admin/dashboard', params={'date': created[:10]}).json()
+    for leaving, value in zip(departures[:3], prices[:3]):
+        daily = client.get('/api/admin/dashboard', params={'date': leaving[:10]}).json()
         assert daily['revenue']['revenue_paise'] == value
-        assert daily['revenue']['revenue_paise'] == daily['activity']['net_value_paise']
+        assert daily['revenue']['revenue_paise'] == daily['inventory']['net_value_paise']
+        assert daily['activity']['net_value_paise'] == 0
         assert sum(bus['revenue_paise'] for bus in daily['revenue']['buses']) == value
 
 
@@ -183,30 +192,32 @@ def test_revenue_changes_after_cancellation_and_is_admin_only(app):
     assert client.get('/api/admin/revenue').status_code == 403
     assert client.post('/api/admin/weekly-schedules', json={}).status_code in (403, 422)
     trip = future_trip(client)
+    travel_date = trip['departure_at'][:10]
     login(client, 'admin')
-    before = client.get('/api/admin/dashboard').json()['revenue']
+    before = client.get('/api/admin/dashboard', params={'date': travel_date}).json()['revenue']
     login(client)
     ticket = book(client, trip).json()
     login(client, 'admin')
-    after = client.get('/api/admin/dashboard').json()['revenue']
+    after = client.get('/api/admin/dashboard', params={'date': travel_date}).json()['revenue']
     assert after['revenue_paise'] == before['revenue_paise']+trip['price_paise']
     assert after['ticket_count'] == before['ticket_count']+1
     login(client)
     assert client.post(f"/api/bookings/{ticket['id']}/cancel").status_code == 200
     login(client, 'admin')
-    assert client.get('/api/admin/dashboard').json()['revenue'] == before
+    assert client.get('/api/admin/dashboard', params={'date': travel_date}).json()['revenue'] == before
     for year in ('0', '10000', 'bad'):
         assert client.get('/api/admin/revenue', params={'year': year}).status_code == 422
     assert client.get('/api/admin/revenue?year=9999').json()['revenue_paise'] == 0
 
 
-def test_revenue_index_is_added_without_replacing_existing_data(app):
+def test_departure_revenue_index_is_added_without_replacing_existing_data(app):
     application, client = app
     login(client)
     ticket = book(client, future_trip(client)).json()
     with application.state.engine.connect() as conn:
-        indexes = conn.exec_driver_sql("PRAGMA index_list('bookings')").mappings().all()
-        assert 'ix_bookings_created' in {row['name'] for row in indexes}
-        plan = conn.exec_driver_sql('EXPLAIN QUERY PLAN SELECT total_paise FROM bookings WHERE created_at >= 1 AND created_at < 100').all()
-        assert any('ix_bookings_created' in row[-1] for row in plan)
+        indexes = conn.exec_driver_sql("PRAGMA index_list('trips')").mappings().all()
+        assert 'ix_trips_departure' in {row['name'] for row in indexes}
+        plan = conn.exec_driver_sql(
+            'EXPLAIN QUERY PLAN SELECT id FROM trips WHERE departure_at >= 1 AND departure_at < 100').all()
+        assert any('ix_trips_departure' in row[-1] for row in plan)
         assert conn.execute(select(bookings.c.id).where(bookings.c.id == ticket['id'])).scalar_one() == ticket['id']
