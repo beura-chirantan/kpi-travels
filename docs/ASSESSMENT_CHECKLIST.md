@@ -62,7 +62,7 @@ contradictory claim.
 - [x] API reference and generated FastAPI OpenAPI documentation.
 - [x] Automated backend, frontend-helper and live smoke tests.
 - [x] Four-slide presentation outline and 30-minute demo sequence.
-- [x] Final Git commit and private GitHub repository:
+- [x] Final Git commit and public GitHub repository:
       `https://github.com/beura-chirantan/kpi-travels`.
 - [ ] Actual presentation deck created from the outline.
 - [ ] Live Groq request rehearsed with the final local environment.
