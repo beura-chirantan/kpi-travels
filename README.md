@@ -58,7 +58,6 @@ Requirements:
 - Python 3.11 or newer
 - Node.js 22.13 or newer
 - pnpm
-- Docker only if using PostgreSQL
 
 On macOS, if `node` or `pnpm` prints `command not found`, install both once with
 Homebrew, then open a new terminal:
@@ -145,7 +144,7 @@ Copy `.env.example` to `.env`. Important values are:
 
 | Variable                                 | Purpose                                                    |
 | ---------------------------------------- | ---------------------------------------------------------- |
-| `DATABASE_URL`                           | SQLite by default; PostgreSQL is also supported            |
+| `DATABASE_URL`                           | SQLAlchemy database URL; local default is SQLite           |
 | `SEED_DEMO`                              | Creates sample data only when the database is empty        |
 | `DEMO_PASSWORD`                          | Password used while creating the local demo users          |
 | `SEAT_HOLD_SECONDS`                      | Checkout hold duration; server clamps it to 60–900 seconds |
@@ -340,24 +339,6 @@ clear status codes, including 401, 403, 404, 409, 422, 429 and 503. Client error
 and server failures are both recorded as sanitized incidents; HTTP 401 means
 authentication is missing or invalid, while HTTP 429 means a rate limit was hit.
 
-## PostgreSQL option
-
-SQLite is the zero-setup default at `data/ticketing.db`. To use PostgreSQL:
-
-```bash
-docker compose up -d db
-```
-
-Then set:
-
-```dotenv
-DATABASE_URL=postgresql+psycopg://kpi:kpi_local_only@127.0.0.1:5432/kpi
-```
-
-Restart FastAPI. This creates a separate database; it does not migrate existing
-SQLite data. The automated suite uses isolated SQLite databases. PostgreSQL must
-be integration-tested separately before claiming production support.
-
 ## Verify
 
 ```bash
@@ -427,12 +408,11 @@ sessions/rate limits/metrics, user provisioning and password reset, audit logs,
 pagination, a production identity provider for `/developer`, PostgreSQL integration
 tests and browser end-to-end tests.
 
-The frontend includes Sites-compatible build configuration, but Sites alone does
-not run this Python API. For a real deployment, host FastAPI and its database,
-configure `API_ORIGIN` to that HTTPS service, set the allowed frontend origin,
-enable secure cookies, disable demo seeding, replace all demo credentials and keep
-secrets outside source control. A frontend deployment pointing to localhost is not
-a working full-stack deployment.
+For a real deployment, host the React server, FastAPI and database, configure
+`API_ORIGIN` to the HTTPS API service, set the allowed frontend origin, enable
+secure cookies, disable demo seeding, replace all demo credentials and keep
+secrets outside source control. A frontend deployment pointing to localhost is
+not a working full-stack deployment.
 
 Before submission, run every verification command, rehearse the live Groq request,
 prepare the four-slide deck, review the code, and commit/push the final source to

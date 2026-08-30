@@ -38,6 +38,7 @@ __pycache__/
 *.tsbuildinfo
 
 # deployment and generated files
+/.openai/
 .vercel
 next-env.d.ts
 /dist/
