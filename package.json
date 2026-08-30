@@ -11,7 +11,7 @@
     "start": "vinext start",
     "typecheck": "tsc --noEmit",
     "test:ui": "node --experimental-strip-types --test scripts/journey.test.mjs",
-    "format": "prettier --write app vite.config.ts README.md docs",
+    "format": "prettier --write app vite.config.ts README.md",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
   },
   "dependencies": {

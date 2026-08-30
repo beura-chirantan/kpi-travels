@@ -332,8 +332,7 @@ not an immutable accounting ledger.
 FastAPI exposes resource-oriented endpoints for authentication, trips, seat maps,
 holds, group bookings, individual bookings, PDFs, rescheduling, ratings, Admin
 fleet/schedules/reports, AI search, developer health and sanitized incidents.
-OpenAPI documentation is available at `/docs` while the API runs. A concise,
-role-grouped endpoint list is in [docs/API.md](docs/API.md).
+OpenAPI documentation is available at `/docs` while the API runs.
 
 State-changing calls require the same-origin request-protection header. Protected
 resources enforce the role and booking owner on the backend. Expected errors use
@@ -411,12 +410,6 @@ backend/tests/                     Automated backend coverage
 scripts/journey.test.mjs           Frontend helper tests
 scripts/smoke_test.py              Read-only live integration check
 ```
-
-See [docs/REACT_GUIDE.md](docs/REACT_GUIDE.md) for a beginner-friendly code
-walkthrough, [docs/DEMO.md](docs/DEMO.md) for the 30-minute presentation plan, and
-[docs/API.md](docs/API.md) for the endpoint catalogue. The final requirement map
-is in [docs/ASSESSMENT_CHECKLIST.md](docs/ASSESSMENT_CHECKLIST.md), and
-[docs/ASSETS.md](docs/ASSETS.md) records the social-card source.
 
 ## Scope and production limitations
 
